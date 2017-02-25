@@ -14,6 +14,7 @@ namespace Parser
     {
         private List<List<Element>> blocks = new List<List<Element>>(); //breadth first from root
         private List<Element> buff = new List<Element>();
+        private List<string> hrefs = new List<string>();
         private string title;
 
         //HtmlNode hNode
@@ -120,7 +121,7 @@ namespace Parser
             return retList;
         }
 
-        public bool contentNull(HtmlNode hNode)
+        private bool contentNull(HtmlNode hNode)
         {            
             string content = hNode.InnerText;
             Regex regexHtmlChar = new Regex("&.*?;");
@@ -128,6 +129,20 @@ namespace Parser
             return string.IsNullOrWhiteSpace(content);
         }
 
+        private void checkHyperLink(HtmlNode hNode)
+        {
+            if (hNode.GetAttributeValue("href", "NaN") != "NaN")
+            {
+                this.hrefs.Add(hNode.GetAttributeValue("href", "NaN"));
+            }
+            else
+            {
+                foreach (HtmlNode child in hNode.ChildNodes)
+                {
+                    checkHyperLink(child);
+                }
+            }
+        }
         
         //buff Block of Elements taken in by reference
         //HtmlNode temp
@@ -140,6 +155,7 @@ namespace Parser
                 if (element.Name != "img" && !contentNull(element))
                 {
                     action(element);
+                    checkHyperLink(element);
                 }
             }           
         }
@@ -169,7 +185,7 @@ namespace Parser
 
         public void print()
         {
-            Console.WriteLine("Title: "+this.title);
+            Console.WriteLine("Title: " + this.title);
             var count = 0;
             foreach (List<Element> elements in this.blocks)
             {
@@ -183,8 +199,13 @@ namespace Parser
                 }
                 Console.WriteLine();
             }
-            Console.WriteLine("Elements: "+ count);
+            Console.WriteLine("Elements: " + count);
             Console.WriteLine("Blocks: " + this.blocks.Count());
+            Console.WriteLine("\nHyperLinks:");
+            foreach (string href in this.hrefs)
+            {
+                Console.WriteLine(href);
+            }
         }
 
         public void sendOff()
