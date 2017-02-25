@@ -1,4 +1,6 @@
-﻿using HtmlAgilityPack;
+﻿
+////maybe store all these private methods in a helper module
+using HtmlAgilityPack;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,17 +10,6 @@ using System.Text.RegularExpressions;
 
 namespace Parser
 {
-    struct Element
-    {
-        
-        public bool isText;
-        public string data;
-        public Element(bool isText, string data)
-        {
-            this.isText = isText;
-            this.data = data;
-        }
-    }
     class ParsedCHM
     {
         private List<List<Element>> blocks = new List<List<Element>>(); //breadth first from root
@@ -35,14 +26,14 @@ namespace Parser
             {
                 return true;
             }
-            else if (hNode.Name == "ul")
+            /*else if (hNode.Name == "ul")
             {
                 return true;
-            }
-           /* else if (hNode.Name == "p" && regex.IsMatch(hNode.InnerText))
-           / {
-                return true;
             }*/
+            /* else if (hNode.Name == "p" && regex.IsMatch(hNode.InnerText))
+            / {
+                 return true;
+             }*/
             else
             {
                 return false;
@@ -51,153 +42,151 @@ namespace Parser
 
         private Element hNodeToElement(HtmlNode temp)
         {
-            if (temp.Name == "img")//what about nested </b> or </i> or </strong> or </font><- gotta get the data into a good format
+            if (temp.Name == "img")
             {
-                return new Element(false, temp.GetAttributeValue("src", "NaN"));
+                return new Element(false, temp.GetAttributeValue("src", "NaN"), "img");
             }
-            return new Element(true, temp.InnerText);
+            return new Element(true, temp.InnerText, temp.Name);
+        }
+
+        private bool nodeNameValidAdd(HtmlNode hNode)
+        {
+            return hNode.Name == "#text" || hNode.Name == "img" || hNode.Name == "li";
         }
 
         //buff Block of Elements taken in by reference
         //HtmlNode temp
         //checks if temp is an image or just textual element and adds accordingly
         //used in addElementToBuffGuarded and Constructor
-        private void addElementToBuff(HtmlNode temp)
+        private void addElementToBuff(HtmlNode hNode)
         {
-            this.buff.Add(hNodeToElement(temp));
+            this.buff.Add(hNodeToElement(hNode));
         }
 
-        private void addElementAsBlock(HtmlNode temp)
+        private void addElementAsBlock(HtmlNode hNode)
         {
             var list = new List<Element>();
-            list.Add(hNodeToElement(temp));
+            list.Add(hNodeToElement(hNode));
             this.blocks.Add(list);
         }
-        //buff Block of Elements taken in by reference
-        //HtmlNode temp
-        //checks buff can expect any new elements, if not dumps buff
-        //used in handleStepsBLock
-        /*private void addElementToBuffGuarded(HtmlNode temp)
+
+        private bool timeToDump(string guardString)
         {
-            //dumps buff if doesn't expect more elements
-            string guardString = temp.GetAttributeValue("value", "NaN");
-            if (guardString == "NaN" || guardString == "1")
+            return (guardString == "NaN" || guardString == "1") && this.buff.Count() != 0;
+        }
+
+        private HtmlNode getFirstNameOccurance(IEnumerable<HtmlNode> nodes, string name)
+        {
+            HtmlNode node = null;
+            foreach (HtmlNode check in nodes)
             {
-                Console.WriteLine("in guard");
-                blocks.Add(this.buff);       
-                this.buff = new List<Element>();
+                if (check.Name == name)
+                {
+                    node = check;
+                    break;
+                }
             }
-            addElementToBuff(temp);        
-        }*/
+            return node;
+        }
 
         private void dumpBuffGuard(HtmlNode hNode)
         {
-            string guardString = hNode.GetAttributeValue("value", "NaN");
-            if (guardString == "NaN" || guardString == "1")
+            HtmlNode firstLi = getFirstNameOccurance(hNode.ChildNodes, "li");
+            firstLi = firstLi == null ? hNode : firstLi;
+            string guardString = firstLi.GetAttributeValue("value", "NaN");
+            if(timeToDump(guardString))
             {
-                Console.WriteLine("in guard");
                 blocks.Add(this.buff);
                 this.buff = new List<Element>();
             }
         }
 
+        private List<HtmlNode> handleChildren(HtmlNode hNode)
+        {
+            List<HtmlNode> retList = new List<HtmlNode>();
+            if (isStepsBlock(hNode)) //&& hNode.Name != "p")
+            {               
+                foreach (HtmlNode child in hNode.ChildNodes)
+                {
+                    string guardString = child.GetAttributeValue("value", "NaN");
+                    retList.Add(child);
+                }
+                
+            }
+            else
+            {
+                retList.Add(hNode);
+            }
+            return retList;
+        }
+
+        public bool contentNull(HtmlNode hNode)
+        {            
+            string content = hNode.InnerText;
+            Regex regexHtmlChar = new Regex("&.*?;");
+            content = regexHtmlChar.Replace(content, "");
+            return string.IsNullOrWhiteSpace(content);
+        }
+
+        
         //buff Block of Elements taken in by reference
         //HtmlNode temp
         //puts elements of a steps block into a Block of Elements
         //used in CHMParser
         private void handleBlock(HtmlNode hNode, Action<HtmlNode> action)
         {
-            // if (hNode.Name == "ol")
-            // {
-                Stack<HtmlNode> explicitStack = new Stack<HtmlNode>();
-                HtmlNode temp = hNode;
-                do
+            foreach (HtmlNode element in handleChildren(hNode))
+            {
+                if (element.Name != "img" && !contentNull(element))
                 {
-                    foreach (HtmlNode child in temp.ChildNodes.Reverse())
-                    {
-                        //Console.WriteLine(temp.InnerText);
-                        explicitStack.Push(child);
-                    }
-                    if (explicitStack.Count == 0)
-                    {
-                        break;
-                    }
-
-                    temp = explicitStack.Pop();
-                    action(temp);
-
-                } while (true);
-            // }
+                    action(element);
+                }
+            }           
         }
         
         public ParsedCHM(HtmlDocument hDoc)
         {
-            /*Element e = new Element();
-            e.isText = true;
-            e.data = hDoc.DocumentNode.Descendants().TakeWhile((x) => x.Name != "title").First().Name;
-            List<Element> title = new List<Element>();
-            title.Add(e);
-            blocks.Add(title);*/
-            HtmlNode body = null;
-           foreach (HtmlNode check in hDoc.DocumentNode.Descendants())
-            {
-                if (check.Name == "body")
-                {
-                    body = check;
-                    break;
-                }
-            }
-            Console.Write(body.Name);
-
-            //var tags = hDoc.DocumentNode.Descendants();
-            //foreach (HtmlNode hNode in tags)
-            //{
+            HtmlNode titleNode = getFirstNameOccurance(hDoc.DocumentNode.Descendants(), "title");
+            this.title = titleNode.InnerText;
+            HtmlNode body = getFirstNameOccurance(hDoc.DocumentNode.Descendants(), "body");
             foreach (HtmlNode hNode in body.ChildNodes)
             {
-                Console.WriteLine("Line");
-                Console.WriteLine(hNode.Name);
                 if (isStepsBlock(hNode))
                 {
-                    Console.WriteLine("try");
-                    Console.WriteLine();
-                    Console.WriteLine(hNode.ChildNodes.First().HasAttributes);//quot specifier makes it seeen as  #text
-                                                                                //definitely needs to massage html further
-                    Console.WriteLine(hNode.ChildNodes.First().Name);
-                    dumpBuffGuard(hNode.FirstChild);
-                    Console.WriteLine();
-                    Console.WriteLine();
-                    //Console.WriteLine(hNode.FirstChild.OuterHtml);
+                    dumpBuffGuard(hNode);
                     handleBlock(hNode, new Action<HtmlNode>((node) => { addElementToBuff(node); }));
                 }
                 else
                 {
-                    /*Console.WriteLine(hNode.InnerText);
-                    List<Element> inList = new List<Element>();
-                    inList.Add(hNodeToElement(hNode));
-                    this.blocks.Add(inList);*/
                     handleBlock(hNode, new Action<HtmlNode>((node) => { addElementAsBlock(node); }));
                 }
             }
-            //}
-            
+            if (this.buff.Count != 0)
+            {
+                this.blocks.Add(this.buff);
+            }
         }
+
         public void print()
         {
+            Console.WriteLine("Title: "+this.title);
             var count = 0;
             foreach (List<Element> elements in this.blocks)
             {
+                Console.WriteLine("Block: ");
                 foreach (Element e in elements)
                 {
                     ++count;
-                    Console.WriteLine();
                     Console.WriteLine(e.data);
                     Console.WriteLine(e.isText);
-                    Console.WriteLine();
-                
+                    Console.WriteLine(e.name);
                 }
+                Console.WriteLine();
             }
-            Console.WriteLine(count);
+            Console.WriteLine("Elements: "+ count);
+            Console.WriteLine("Blocks: " + this.blocks.Count());
         }
+
         public void sendOff()
         {
             ;//TODO
