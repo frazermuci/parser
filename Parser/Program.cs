@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using HtmlAgilityPack;
 using System.IO;
+using System.Text.RegularExpressions;
 
 namespace Parser
 {
@@ -12,6 +13,10 @@ namespace Parser
     {
         static void Main(string[] args)
         {
+            HtmlDocument htmlDoc = new HtmlDocument();
+            htmlDoc.Load("C:\\Users\\Matthew\\Desktop\\2015-2016 School\\test\\DeleteUser.html");
+            ParsedCHM parsed = new ParsedCHM(htmlDoc);
+            parsed.print();
             /*List<HtmlDocument> parseDocs = new List<HtmlDocument>();
             for (int i = 0; i < args.Length; ++i)
             {
@@ -19,7 +24,9 @@ namespace Parser
                 doc.Load(args[i]);
                 parseDocs.Add(doc);
             }*/
-            List<HtmlDocument> parseDocs = new List<HtmlDocument>();
+            //HTMLMessager hM = new HTMLMessager("C:\\Users\\Matthew\\Desktop\\2015-2016 School\\test\\NewUser.html");
+
+            /*List <HtmlDocument> parseDocs = new List<HtmlDocument>();
             HtmlDocument htmlDoc = new HtmlDocument();
             htmlDoc.Load("C:\\Users\\Matthew\\Desktop\\TestCHM\\DeleteUser.html");
             parseDocs.Add(htmlDoc);
@@ -29,6 +36,7 @@ namespace Parser
                 //parsed.sendOff();
                 //parsed.print();
               }
+            */
             /*HtmlDocument doc = new HtmlDocument();
             doc.Load("DeleteUser.html");
             var root = doc.DocumentNode.Descendants();
@@ -36,7 +44,7 @@ namespace Parser
             {
                 Console.WriteLine(hNode.Name);
             }*/
-                while (true) {; }
+            while (true) {; }
         }
     }
 }
