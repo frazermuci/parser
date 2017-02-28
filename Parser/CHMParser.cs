@@ -10,7 +10,7 @@ using System.Text.RegularExpressions;
 
 namespace Parser
 {
-    class ParsedCHM
+    public class ParsedCHM
     {
         private List<List<Element>> blocks = new List<List<Element>>(); //breadth first from root
         private List<Element> buff = new List<Element>();
@@ -193,24 +193,43 @@ namespace Parser
                 foreach (Element e in elements)
                 {
                     ++count;
-                    Console.WriteLine(e.data);
-                    Console.WriteLine(e.isText);
-                    Console.WriteLine(e.name);
+                    Console.WriteLine("     Data: " + e.data);
+                    Console.WriteLine("     IsText: " + e.isText);
+                    Console.WriteLine("     Tag: " + e.name);
+                    Console.WriteLine(" ");
                 }
-                Console.WriteLine();
+                Console.WriteLine("----------------------------------------------------------------\n");
             }
-            Console.WriteLine("Elements: " + count);
-            Console.WriteLine("Blocks: " + this.blocks.Count());
+            Console.WriteLine("# of Elements: " + count);
+            Console.WriteLine("# of Blocks: " + this.blocks.Count());
             Console.WriteLine("\nHyperLinks:");
             foreach (string href in this.hrefs)
             {
-                Console.WriteLine(href);
+                Console.WriteLine("     " + href);
             }
         }
 
         public void sendOff()
         {
             ;//TODO
+        }
+
+
+        // GETTERS and SETTERS are being used for testing purposes
+
+        public string Title
+        {
+            get { return this.title; }
+        }
+
+        public List<List<Element>> Blocks
+        {
+            get { return this.blocks; }
+        }
+
+        public List<string> Hrefs
+        {
+            get { return this.hrefs;  }
         }
     }
 }
