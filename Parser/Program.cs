@@ -14,7 +14,8 @@ namespace Parser
         static void Main(string[] args)
         {
             HtmlDocument htmlDoc = new HtmlDocument();
-            htmlDoc.Load("C:\\Users\\Matthew\\Desktop\\2015-2016 School\\test\\DeleteUser.html");
+            // htmlDoc.Load("D:/SeniorDesign/ActivAID/parser/Parser/DeleteUser.html");
+            htmlDoc.Load("D:/SeniorDesign/ActivAID/parser/Parser/HelpFiles/DeletingDrivers.htm");
             ParsedCHM parsed = new ParsedCHM(htmlDoc);
             parsed.print();
             /*List<HtmlDocument> parseDocs = new List<HtmlDocument>();

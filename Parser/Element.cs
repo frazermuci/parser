@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Parser
 {
-    struct Element
+    public struct Element
     {
 
         public bool isText;
